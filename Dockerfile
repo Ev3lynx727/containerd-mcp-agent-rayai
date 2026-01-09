@@ -3,9 +3,13 @@ FROM rayproject/ray:nightly-extra
 ENV PYTHONUNBUFFERED=1 \
     DEBIAN_FRONTEND=noninteractive \
     TORCH_CUDA_ARCH_LIST=6.0;7.0;7.5;8.0;8.6;8.9;9.0 \
-    MAX_JOBS=4
+    MAX_JOBS=4 \
+    PIP_INDEX_URL=https://pypi.org/simple \
+    PIP_TRUSTED_HOST=pypi.org
 
-RUN pip install --no-cache-dir --upgrade pip wheel setuptools && \
+RUN echo "nameserver 8.8.8.8" > /etc/resolv.conf && \
+    echo "nameserver 1.1.1.1" >> /etc/resolv.conf && \
+    pip install --no-cache-dir --upgrade pip wheel setuptools && \
     pip install --no-cache-dir \
     torch==2.1.0 \
     torchvision==0.16.0 \

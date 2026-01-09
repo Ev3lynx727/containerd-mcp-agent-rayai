@@ -21,6 +21,11 @@ services:
       - RAY_NUM_CPUS=4
       - RAY_MEMORY=2147483648
       - NETDATA_TRENDING=1
+      - PIP_INDEX_URL=https://pypi.org/simple
+      - PIP_TRUSTED_HOST=pypi.org
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
     networks:
       - rayai-net
     healthcheck:
