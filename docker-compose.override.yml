@@ -1,0 +1,16 @@
+# Local development override
+# Use this to build images locally instead of pulling from GHCR
+# Run with: docker compose -f docker-compose.yml -f docker-compose.override.yml up -d
+
+services:
+  ray-head:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: rayai-agent:latest
+
+  ray-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: rayai-worker:latest

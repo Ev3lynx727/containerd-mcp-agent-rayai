@@ -2,11 +2,7 @@ version: '3.8'
 
 services:
   ray-head:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      args:
-        - DOCKER_BUILDKIT=1
+    image: ghcr.io/ev3lynx727/containerd-mcp-agent-rayai/ray-head:latest
     container_name: rayai-agent
     hostname: ray-head
     ports:
@@ -49,9 +45,7 @@ services:
               capabilities: [gpu]
 
   ray-worker:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: ghcr.io/ev3lynx727/containerd-mcp-agent-rayai/ray-worker:latest
     container_name: ray-worker
     hostname: ray-worker
     depends_on:

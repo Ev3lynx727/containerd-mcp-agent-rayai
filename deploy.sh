@@ -15,6 +15,27 @@ print_status() { echo -e "${GREEN}[+]${NC} $1"; }
 print_warning() { echo -e "${YELLOW}[!]${NC} $1"; }
 print_error() { echo -e "${RED}[-]${NC} $1"; }
 
+# Parse arguments
+BUILD_LOCAL=false
+for arg in "$@"; do
+    case $arg in
+        --local)
+            BUILD_LOCAL=true
+            shift
+            ;;
+        --pull)
+            BUILD_LOCAL=false
+            shift
+            ;;
+        --help|-h)
+            echo "Usage: $0 [--local|--pull]"
+            echo "  --local  Build images locally (default)"
+            echo "  --pull   Pull images from GHCR"
+            exit 0
+            ;;
+    esac
+done
+
 # Check Docker
 if ! docker info > /dev/null 2>&1; then
     print_error "Docker is not running"
@@ -29,16 +50,39 @@ else
     print_warning "Netdata not running - will start with compose"
 fi
 
-# Build image
-print_status "Building RayAI image with PyTorch..."
-docker build --network=host -t rayai-agent:latest .
+# Build or pull images
+if [ "$BUILD_LOCAL" = true ]; then
+    print_status "Building RayAI images locally..."
+    docker build --network=host -t rayai-agent:latest .
+    docker build --network=host -t rayai-worker:latest .
+
+    print_status "Updating compose to use local images..."
+    COMPOSE_FILE="docker-compose.yml"
+else
+    print_status "Pulling images from GHCR..."
+
+    # Login to GHCR if token is available
+    if [ -n "$GHCR_TOKEN" ]; then
+        echo "$GHCR_TOKEN" | docker login ghcr.io -u "${GITHUB_USER:-$(git config user.name)}" --password-stdin
+    elif [ -n "$GITHUB_TOKEN" ]; then
+        echo "$GITHUB_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
+    else
+        print_warning "No GHCR_TOKEN found - attempting anonymous pull"
+    fi
+
+    # Pull images
+    docker pull ghcr.io/ev3lynx727/containerd-mcp-agent-rayai/ray-head:latest || print_warning "Failed to pull ray-head"
+    docker pull ghcr.io/ev3lynx727/containerd-mcp-agent-rayai/ray-worker:latest || print_warning "Failed to pull ray-worker"
+
+    COMPOSE_FILE="docker-compose.override.yml"
+fi
 
 # Create directories
 mkdir -p agents models
 
 # Start services
 print_status "Starting RayAI cluster with Netdata..."
-docker compose up -d
+docker compose -f docker-compose.yml up -d
 
 # Wait for services
 sleep 20
@@ -60,8 +104,6 @@ sleep 5
 
 if curl -sf http://localhost:19999/api/v1/info > /dev/null 2>&1; then
     print_status "Netdata is accessible at http://localhost:19999"
-    print_status "Checking for Ray containers in Netdata..."
-    curl -sf http://localhost:19999/api/v1/info 2>/dev/null | grep -o '"hostname":"[^"]*"' | head -5
 else
     print_warning "Netdata not accessible at localhost:19999"
 fi
@@ -76,8 +118,7 @@ echo "  - RayAI Agents:   http://localhost:8200"
 echo "  - Ray Dashboard:  http://localhost:8265"
 echo "  - Netdata:        http://localhost:19999"
 echo ""
-echo "Netdata Docker monitoring enabled!"
-echo "Containers should appear under 'docker' section in Netdata"
+echo "Image mode: $([ "$BUILD_LOCAL" = true ] && echo "Local build" || echo "GHCR pull")"
 echo ""
 echo "Commands:"
 echo "  - View logs:  docker compose logs -f"
