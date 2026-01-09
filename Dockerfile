@@ -9,28 +9,28 @@ ENV PYTHONUNBUFFERED=1 \
 
 RUN pip install --no-cache-dir --upgrade pip wheel setuptools && \
     pip install --no-cache-dir \
-    torch==2.1.0 \
-    torchvision==0.16.0 \
-    torchaudio==2.1.0 \
-    transformers==4.35.0 \
-    accelerate==0.24.0 \
-    peft==0.7.0 \
-    bitsandbytes==0.41.0 \
-    sentence-transformers==2.2.2 \
-    vllm==0.4.0 \
-    openai==1.3.0 \
-    langchain==0.2.17 \
-    langchain-community==0.2.17 \
-    tiktoken==0.5.0 \
-    faiss-cpu==1.7.4 \
-    slowapi==0.1.8 \
-    uvicorn==0.24.0 \
-    fastapi==0.109.0 \
-    pydantic==2.5.0 \
-    python-multipart==0.0.6 \
-    loguru==0.7.2 \
-    pyyaml==6.0.1 \
-    redis==5.0.0
+    'torch>=2.1.0' \
+    'torchvision>=0.16.0' \
+    'torchaudio>=2.1.0' \
+    'transformers>=4.35.0' \
+    'accelerate>=0.24.0' \
+    'peft>=0.7.0' \
+    'bitsandbytes>=0.41.0' \
+    'sentence-transformers>=2.2.0' \
+    'vllm>=0.4.0' \
+    'openai>=1.3.0' \
+    'langchain>=0.2.0' \
+    'langchain-community>=0.2.0' \
+    'tiktoken>=0.5.0' \
+    'faiss-cpu>=1.7.0' \
+    'slowapi>=0.1.0' \
+    'uvicorn>=0.24.0' \
+    'fastapi>=0.109.0' \
+    'pydantic>=2.5.0' \
+    'python-multipart>=0.0.6' \
+    'loguru>=0.7.0' \
+    'pyyaml>=6.0.1' \
+    'redis>=5.0.0'
 
 WORKDIR /app
 
