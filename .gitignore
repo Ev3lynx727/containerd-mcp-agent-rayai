@@ -1,0 +1,47 @@
+# Python
+__pycache__
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+*.egg-info/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Local data
+data/
+models/
+agents/
+!agents/.gitkeep
+!models/.gitkeep
+
+# Secrets - never commit these!
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+
+# Docker
+docker-compose.override.yml
+
+# Documentation
+*.md
+docs/
+!ORCHESTRATION.md
+!CONTAINER_REGISTRY.md
+!README.md
