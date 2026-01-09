@@ -38,9 +38,6 @@ jobs:
       packages: write
       id-token: write
     if: github.event_name != 'workflow_dispatch' || (inputs.image_type == 'all' || inputs.image_type == 'ray-head')
-    defaults:
-      run:
-        working-directory: .
 
     steps:
       - name: Checkout repository
@@ -86,9 +83,6 @@ jobs:
       packages: write
       id-token: write
     if: github.event_name != 'workflow_dispatch' || (inputs.image_type == 'all' || inputs.image_type == 'ray-worker')
-    defaults:
-      run:
-        working-directory: .
 
     steps:
       - name: Checkout repository
