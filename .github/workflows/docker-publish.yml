@@ -24,49 +24,17 @@ jobs:
         uses: docker/setup-buildx-action@v3
 
       - name: Log in to Docker Hub
-        if: ${{ secrets.DOCKERHUB_TOKEN != '' }}
-        uses: docker/login-action@v3
-        with:
-          registry: docker.io
-          username: ${{ secrets.DOCKERHUB_USERNAME || 'ev3lyn727' }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
+        run: |
+          if [ -n "${{ secrets.DOCKERHUB_TOKEN }}" ]; then
+            echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME || 'ev3lyn727' }}" --password-stdin
+          fi
 
       - name: Build ray-head
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          file: Dockerfile
-          push: ${{ secrets.DOCKERHUB_TOKEN != '' }}
-          tags: docker.io/ev3lynx727/containerd-mcp-agent-rayai/ray-head:latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+        run: |
+          docker build --push --tag docker.io/ev3lynx727/containerd-mcp-agent-rayai/ray-head:latest \
+            --cache-from type=gha --cache-to type=gha,mode=max .
 
       - name: Build ray-worker
-        if: ${{ secrets.DOCKERHUB_TOKEN != '' }}
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          file: Dockerfile
-          push: true
-          tags: docker.io/ev3lynx727/containerd-mcp-agent-rayai/ray-worker:latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-      - name: Show result
-        if: ${{ secrets.DOCKERHUB_TOKEN == '' }}
         run: |
-          echo "=============================================="
-          echo "WARNING: DOCKERHUB_TOKEN not set!"
-          echo "=============================================="
-          echo ""
-          echo "Images were built but NOT pushed to Docker Hub."
-          echo ""
-          echo "To enable pushes, add a Docker Hub access token:"
-          echo "1. Go to: https://hub.docker.com/settings/security"
-          echo "2. Create a new Access Token"
-          echo "3. Add to GitHub secrets:"
-          echo "   https://github.com/${{ github.repository }}/settings/secrets/actions"
-          echo "   - Name: DOCKERHUB_TOKEN"
-          echo "   - Value: [your token]"
-          echo ""
-          echo "=============================================="
+          docker build --push --tag docker.io/ev3lynx727/containerd-mcp-agent-rayai/ray-worker:latest \
+            --cache-from type=gha --cache-to type=gha,mode=max .
