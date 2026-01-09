@@ -19,8 +19,8 @@ RUN pip install --no-cache-dir --upgrade pip wheel setuptools && \
     sentence-transformers==2.2.2 \
     vllm==0.4.0 \
     openai==1.3.0 \
-    langchain==0.2.29 \
-    langchain-community==0.2.29 \
+    langchain==0.2.17 \
+    langchain-community==0.2.17 \
     tiktoken==0.5.0 \
     faiss-cpu==1.7.4 \
     slowapi==0.1.8 \
