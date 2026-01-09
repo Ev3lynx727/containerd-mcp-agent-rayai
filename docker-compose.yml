@@ -1,0 +1,114 @@
+version: '3.8'
+
+services:
+  ray-head:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: rayai-agent
+    hostname: ray-head
+    ports:
+      - "8200:8200"
+      - "8265:8265"
+      - "8000:8000"
+    volumes:
+      - rayai-data:/app/data
+      - ./agents:/app/agents
+      - ./models:/app/models
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    environment:
+      - RAY_DEDUP_LOGS=0
+      - RAY_NUM_CPUS=4
+      - RAY_MEMORY=2147483648
+      - NETDATA_TRENDING=1
+    networks:
+      - rayai-net
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8265/api/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+    depends_on:
+      netdata-agent:
+        condition: service_healthy
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+
+  ray-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ray-worker
+    hostname: ray-worker
+    depends_on:
+      ray-head:
+        condition: service_healthy
+    environment:
+      - RAY_ADDRESS=ray-head:10002
+      - RAY_NUM_CPUS=4
+      - RAY_MEMORY=2147483648
+      - NETDATA_TRENDING=1
+    volumes:
+      - rayai-data:/app/data
+      - ./models:/app/models
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - rayai-net
+    command: ray start --address=ray-head:10002
+    restart: unless-stopped
+    deploy:
+      replicas: 2
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+
+  netdata-agent:
+    image: netdata/netdata:latest
+    container_name: netdata-collector
+    hostname: netdata-collector
+    ports:
+      - "19999:19999"
+    volumes:
+      - netdata-config:/etc/netdata
+      - netdata-lib:/var/lib/netdata
+      - netdata-cache:/var/cache/netdata
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /etc/os-release:/host/etc/os-release:ro
+    environment:
+      - NETDATA_CLAIM_URL=https://app.netdata.io
+      - NETDATA_TRENDING=1
+    networks:
+      - rayai-net
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:19999/api/v1/info || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    restart: unless-stopped
+    cap_add:
+      - SYS_PTRACE
+    security_opt:
+      - apparmor:unconfined
+
+volumes:
+  rayai-data:
+  netdata-config:
+  netdata-lib:
+  netdata-cache:
+
+networks:
+  rayai-net:
+    driver: bridge
