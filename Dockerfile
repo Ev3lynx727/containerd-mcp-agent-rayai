@@ -19,8 +19,8 @@ RUN pip install --no-cache-dir --upgrade pip wheel setuptools && \
     sentence-transformers==2.2.2 \
     vllm==0.4.0 \
     openai==1.3.0 \
-    langchain==0.1.0 \
-    langchain-community==0.1.0 \
+    langchain==0.2.29 \
+    langchain-community==0.2.29 \
     tiktoken==0.5.0 \
     faiss-cpu==1.7.4 \
     slowapi==0.1.8 \
@@ -30,8 +30,7 @@ RUN pip install --no-cache-dir --upgrade pip wheel setuptools && \
     python-multipart==0.0.6 \
     loguru==0.7.2 \
     pyyaml==6.0.1 \
-    redis==5.0.0 \
-    prometheus-client==0.19.0
+    redis==5.0.0
 
 WORKDIR /app
 
