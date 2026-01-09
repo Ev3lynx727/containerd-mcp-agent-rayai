@@ -23,19 +23,16 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Check for Docker Hub token
-        id: check-token
+      - name: Check Docker Hub token
         run: |
           if [ -z "${{ secrets.DOCKERHUB_TOKEN }}" ]; then
-            echo "DOCKERHUB_TOKEN is not set"
-            echo "skip_push=true" >> $GITHUB_OUTPUT
+            echo "DOCKERHUB_TOKEN_NOT_SET=true" >> $GITHUB_ENV
           else
-            echo "DOCKERHUB_TOKEN is set"
-            echo "skip_push=false" >> $GITHUB_OUTPUT
+            echo "DOCKERHUB_TOKEN_NOT_SET=false" >> $GITHUB_ENV
           fi
 
       - name: Log in to Docker Hub
-        if: steps.check-token.outputs.skip_push != 'true'
+        if: env.DOCKERHUB_TOKEN_NOT_SET != 'true'
         uses: docker/login-action@v3
         with:
           registry: docker.io
@@ -47,13 +44,13 @@ jobs:
         with:
           context: .
           file: Dockerfile
-          push: ${{ steps.check-token.outputs.skip_push != 'true' }}
+          push: ${{ env.DOCKERHUB_TOKEN_NOT_SET != 'true' }}
           tags: docker.io/ev3lynx727/containerd-mcp-agent-rayai/ray-head:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
       - name: Build ray-worker
-        if: steps.check-token.outputs.skip_push != 'true'
+        if: env.DOCKERHUB_TOKEN_NOT_SET != 'true'
         uses: docker/build-push-action@v5
         with:
           context: .
@@ -64,7 +61,7 @@ jobs:
           cache-to: type=gha,mode=max
 
       - name: Show result
-        if: steps.check-token.outputs.skip_push == 'true'
+        if: env.DOCKERHUB_TOKEN_NOT_SET == 'true'
         run: |
           echo "=============================================="
           echo "WARNING: DOCKERHUB_TOKEN not set!"
@@ -75,11 +72,9 @@ jobs:
           echo "To enable pushes, add a Docker Hub access token:"
           echo "1. Go to: https://hub.docker.com/settings/security"
           echo "2. Create a new Access Token"
-          echo "3. Add to GitHub secrets: https://github.com/${{ github.repository }}/settings/secrets/actions"
+          echo "3. Add to GitHub secrets:"
+          echo "   https://github.com/${{ github.repository }}/settings/secrets/actions"
           echo "   - Name: DOCKERHUB_TOKEN"
           echo "   - Value: [your token]"
           echo ""
-          echo "For public images, you can also set:"
-          echo "   - Name: DOCKERHUB_USERNAME"
-          echo "   - Value: your-dockerhub-username"
           echo "=============================================="
