@@ -1,43 +1,20 @@
-name: Build & Push RayAI Images to Docker Hub
+name: Build & Push RayAI Images
 
 on:
   push:
-    branches:
-      - main
-      - feature/*
+    branches: [main, feature/*]
     paths:
-      - '**.py'
       - 'Dockerfile'
       - 'docker-compose.yml'
       - '.github/workflows/docker-publish.yml'
-  pull_request:
-    branches:
-      - main
-  workflow_dispatch:
-    inputs:
-      image_type:
-        description: 'Image to build'
-        required: true
-        default: 'all'
-        type: choice
-        options:
-          - all
-          - ray-head
-          - ray-worker
-
-env:
-  REGISTRY: docker.io
-  IMAGE_NAME: ${{ github.repository_owner | lowercase }}/containerd-mcp-agent-rayai
 
 jobs:
-  build-ray-head:
-    name: Build ray-head
+  build:
+    name: Build and Push
     runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: write
-      id-token: write
-    if: github.event_name != 'workflow_dispatch' || (inputs.image_type == 'all' || inputs.image_type == 'ray-head')
 
     steps:
       - name: Checkout repository
@@ -49,127 +26,16 @@ jobs:
       - name: Log in to Docker Hub
         uses: docker/login-action@v3
         with:
-          registry: ${{ env.REGISTRY }}
+          registry: docker.io
           username: ${{ github.actor }}
           password: ${{ secrets.DOCKERHUB_TOKEN || github.token }}
-
-      - name: Extract metadata for ray-head
-        id: meta-head
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/ray-head
-          tags: |
-            type=sha
-            type=ref,event=branch
-            type=raw,value=latest,enable={{is_default_branch}}
 
       - name: Build and push ray-head
         uses: docker/build-push-action@v5
         with:
           context: .
           file: Dockerfile
-          push: ${{ github.event_name != 'pull_request' }}
-          tags: ${{ steps.meta-head.outputs.tags }}
-          labels: ${{ steps.meta-head.outputs.labels }}
+          push: true
+          tags: docker.io/ev3lynx727/containerd-mcp-agent-rayai/ray-head:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          provenance: false
-
-  build-ray-worker:
-    name: Build ray-worker
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
-      id-token: write
-    if: github.event_name != 'workflow_dispatch' || (inputs.image_type == 'all' || inputs.image_type == 'ray-worker')
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Log in to Docker Hub
-        uses: docker/login-action@v3
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.DOCKERHUB_TOKEN || github.token }}
-
-      - name: Extract metadata for ray-worker
-        id: meta-worker
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/ray-worker
-          tags: |
-            type=sha
-            type=ref,event=branch
-            type=raw,value=latest,enable={{is_default_branch}}
-
-      - name: Build and push ray-worker
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          file: Dockerfile
-          push: ${{ github.event_name != 'pull_request' }}
-          tags: ${{ steps.meta-worker.outputs.tags }}
-          labels: ${{ steps.meta-worker.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-          provenance: false
-
-  update-compose:
-    name: Update compose references
-    runs-on: ubuntu-latest
-    needs: [build-ray-head, build-ray-worker]
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    permissions:
-      contents: write
-      packages: read
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          persist-credentials: false
-          fetch-depth: 0
-
-      - name: Set up Git config
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-
-      - name: Update docker-compose.yml with Docker Hub images
-        run: |
-          sed -i 's|image: ghcr.io/${{ github.repository }}/ray-head:latest|image: docker.io/${{ env.IMAGE_NAME }}/ray-head:latest|g' docker-compose.yml
-          sed -i 's|ghcr.io/${{ github.repository }}/ray-head|docker.io/${{ env.IMAGE_NAME }}/ray-head|g' docker-compose.yml
-          sed -i 's|ghcr.io/${{ github.repository }}/ray-worker|docker.io/${{ env.IMAGE_NAME }}/ray-worker|g' docker-compose.yml
-          cat docker-compose.yml
-
-      - name: Commit and push changes
-        run: |
-          git add docker-compose.yml
-          git diff --cached
-          if [ -n "$(git diff --cached)" ]; then
-            git commit -m "chore: Update docker-compose to use Docker Hub images"
-            git push
-          else
-            echo "No changes to commit"
-          fi
-
-  notify:
-    name: Notify
-    runs-on: ubuntu-latest
-    needs: [build-ray-head, build-ray-worker]
-    if: always()
-
-    steps:
-      - name: Get workflow run status
-        run: |
-          echo "Workflow status: ${{ job.status }}"
-          if [ "${{ job.status }}" == "failure" ]; then
-            echo "One or more jobs failed"
-            exit 1
-          fi
