@@ -23,11 +23,8 @@ fi
 
 # Check Netdata
 print_status "Checking Netdata..."
-NETDATA_RUNNING=false
 if docker ps --format '{{.Names}}' | grep -q "netdata-container"; then
-    NETDATA_RUNNING=true
-    NETDATA_IP=$(docker inspect netdata-container --format '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' 2>/dev/null)
-    print_status "Netdata is running at: ${NETDATA_IP:-host network}"
+    print_status "Netdata is running on host network"
 else
     print_warning "Netdata not running - will start with compose"
 fi
@@ -52,7 +49,8 @@ print_status "Connecting containers to host network for Netdata..."
 for container in rayai-agent ray-worker; do
     if docker ps --format '{{.Names}}' | grep -q "$container"; then
         print_status "Connecting $container to host network..."
-        docker network connect host $container 2>/dev/null || print_warning "$container already on host network"
+        docker network disconnect host $container 2>/dev/null || true
+        docker network connect host $container 2>/dev/null || print_warning "Could not connect $container"
     fi
 done
 
