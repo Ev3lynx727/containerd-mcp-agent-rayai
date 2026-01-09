@@ -23,16 +23,8 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Check Docker Hub token
-        run: |
-          if [ -z "${{ secrets.DOCKERHUB_TOKEN }}" ]; then
-            echo "DOCKERHUB_TOKEN_NOT_SET=true" >> $GITHUB_ENV
-          else
-            echo "DOCKERHUB_TOKEN_NOT_SET=false" >> $GITHUB_ENV
-          fi
-
       - name: Log in to Docker Hub
-        if: env.DOCKERHUB_TOKEN_NOT_SET != 'true'
+        if: ${{ secrets.DOCKERHUB_TOKEN != '' }}
         uses: docker/login-action@v3
         with:
           registry: docker.io
@@ -44,13 +36,13 @@ jobs:
         with:
           context: .
           file: Dockerfile
-          push: ${{ env.DOCKERHUB_TOKEN_NOT_SET != 'true' }}
+          push: ${{ secrets.DOCKERHUB_TOKEN != '' }}
           tags: docker.io/ev3lynx727/containerd-mcp-agent-rayai/ray-head:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
       - name: Build ray-worker
-        if: env.DOCKERHUB_TOKEN_NOT_SET != 'true'
+        if: ${{ secrets.DOCKERHUB_TOKEN != '' }}
         uses: docker/build-push-action@v5
         with:
           context: .
@@ -61,7 +53,7 @@ jobs:
           cache-to: type=gha,mode=max
 
       - name: Show result
-        if: env.DOCKERHUB_TOKEN_NOT_SET == 'true'
+        if: ${{ secrets.DOCKERHUB_TOKEN == '' }}
         run: |
           echo "=============================================="
           echo "WARNING: DOCKERHUB_TOKEN not set!"
