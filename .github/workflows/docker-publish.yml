@@ -1,4 +1,4 @@
-name: Build & Push RayAI Images to GHCR
+name: Build & Push RayAI Images to Docker Hub
 
 on:
   push:
@@ -37,7 +37,7 @@ jobs:
       contents: read
       packages: write
       id-token: write
-    if: github.event_name != 'workflow_dispatch' || inputs.image_type == 'all' || inputs.image_type == 'ray-head'
+    if: github.event_name != 'workflow_dispatch' || (inputs.image_type == 'all' || inputs.image_type == 'ray-head')
     defaults:
       run:
         working-directory: .
@@ -85,7 +85,7 @@ jobs:
       contents: read
       packages: write
       id-token: write
-    if: github.event_name != 'workflow_dispatch' || inputs.image_type == 'all' || inputs.image_type == 'ray-worker'
+    if: github.event_name != 'workflow_dispatch' || (inputs.image_type == 'all' || inputs.image_type == 'ray-worker')
     defaults:
       run:
         working-directory: .
@@ -159,7 +159,7 @@ jobs:
           git add docker-compose.yml
           git diff --cached
           if [ -n "$(git diff --cached)" ]; then
-            git commit -m "chore: Update docker-compose to use GHCR images"
+            git commit -m "chore: Update docker-compose to use Docker Hub images"
             git push
           else
             echo "No changes to commit"
