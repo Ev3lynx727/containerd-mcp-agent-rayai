@@ -31,7 +31,7 @@ fi
 
 # Build image
 print_status "Building RayAI image with PyTorch..."
-docker build -t rayai-agent:latest .
+docker build --network=host -t rayai-agent:latest .
 
 # Create directories
 mkdir -p agents models

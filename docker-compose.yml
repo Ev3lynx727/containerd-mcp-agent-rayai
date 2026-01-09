@@ -5,6 +5,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        - DOCKER_BUILDKIT=1
     container_name: rayai-agent
     hostname: ray-head
     ports:
