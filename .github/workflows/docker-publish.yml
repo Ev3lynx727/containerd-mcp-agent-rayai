@@ -36,6 +36,7 @@ jobs:
     permissions:
       contents: read
       packages: write
+      id-token: write
     if: github.event_name != 'workflow_dispatch' || inputs.image_type == 'all' || inputs.image_type == 'ray-head'
     defaults:
       run:
@@ -53,7 +54,7 @@ jobs:
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
-          password: ${{ secrets.GHCR_TOKEN }}
+          password: ${{ secrets.GHCR_TOKEN || github.token }}
 
       - name: Extract metadata for ray-head
         id: meta-head
@@ -83,6 +84,7 @@ jobs:
     permissions:
       contents: read
       packages: write
+      id-token: write
     if: github.event_name != 'workflow_dispatch' || inputs.image_type == 'all' || inputs.image_type == 'ray-worker'
     defaults:
       run:
@@ -100,7 +102,7 @@ jobs:
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
-          password: ${{ secrets.GHCR_TOKEN }}
+          password: ${{ secrets.GHCR_TOKEN || github.token }}
 
       - name: Extract metadata for ray-worker
         id: meta-worker
